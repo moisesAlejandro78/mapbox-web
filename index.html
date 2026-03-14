@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <title>Proyecto Mapbox</title>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet" />
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 10px;
+        }
+
+        #map {
+            width: 100%;
+            height: 80vh;
+        }
+
+        #info {
+            font-size: 18px;
+            padding: 10px;
+            background: #f2f2f2;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Proyecto de Mapbox</h1>
+    <h3>Moises Alejandro Choque Choque</h3>
+
+    <div id="map"></div>
+
+    <div id="info">
+        Esperando ubicación...
+    </div>
+
+    <script>
+
+        const part1 = "pk.";
+        const part2 = "eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag";
+        mapboxgl.accessToken = part1 + part2;
+
+        const map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/satellite-streets-v12",
+            center: [-68.15, -16.5],
+            zoom: 14
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSy" + "Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
+            authDomain: "mapbox-moises.firebaseapp.com",
+            projectId: "mapbox-moises",
+            storageBucket: "mapbox-moises.firebasestorage.app",
+            messagingSenderId: "1091421930334",
+            appId: "1:1091421930334:web:9d9afad1b2af25e32905cf"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        const db = firebase.firestore();
+
+        const marcador = new mapboxgl.Marker({ color: "red" })
+            .setLngLat([-68.15, -16.5])
+            .addTo(map);
+
+        db.collection("ubicacion")
+            .doc("usuario1")
+            .onSnapshot((doc) => {
+
+                const data = doc.data();
+
+                const lat = data.latitud;
+                const lon = data.longitud;
+
+                marcador.setLngLat([lon, lat]);
+
+                map.flyTo({
+                    center: [lon, lat],
+                    zoom: 16
+                });
+
+                let hora = data.hora;
+
+                if (hora && hora.toDate) {
+                    hora = hora.toDate().toLocaleTimeString();
+                }
+
+                document.getElementById("info").innerHTML =
+                    "Latitud: " + lat + "<br>" +
+                    "Longitud: " + lon + "<br>" +
+                    "Hora: " + hora;
+
+            });
+
+    </script>
+
+</body>
+
+</html>
