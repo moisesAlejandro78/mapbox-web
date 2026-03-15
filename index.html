@@ -74,36 +74,48 @@
 
         const db = firebase.firestore();
 
-        const marcador = new mapboxgl.Marker({ color: "red" })
-            .setLngLat([-68.15, -16.5])
-            .addTo(map);
+        const marcadores = {};
 
-        db.collection("ubicacion")
-            .doc("usuario1")
-            .onSnapshot((doc) => {
+        db.collection("ubicaciones")
+            .onSnapshot((snapshot) => {
 
-                const data = doc.data();
+                snapshot.docChanges().forEach((change) => {
 
-                const lat = data.latitud;
-                const lon = data.longitud;
+                    const data = change.doc.data();
+                    const id = change.doc.id;
 
-                marcador.setLngLat([lon, lat]);
+                    const lat = data.latitud;
+                    const lon = data.longitud;
 
-                map.flyTo({
-                    center: [lon, lat],
-                    zoom: 16
+                    if (change.type === "added") {
+
+                        marcadores[id] = new mapboxgl.Marker({ color: "red" })
+                            .setLngLat([lon, lat])
+                            .addTo(map);
+
+                    }
+
+                    if (change.type === "modified") {
+
+                        if (marcadores[id]) {
+                            marcadores[id].setLngLat([lon, lat]);
+                        }
+
+                    }
+
+                    let hora = data.hora;
+
+                    if (hora && hora.toDate) {
+                        hora = hora.toDate().toLocaleTimeString();
+                    }
+
+                    document.getElementById("info").innerHTML =
+                        "Dispositivo: " + id + "<br>" +
+                        "Latitud: " + lat + "<br>" +
+                        "Longitud: " + lon + "<br>" +
+                        "Hora: " + hora;
+
                 });
-
-                let hora = data.hora;
-
-                if (hora && hora.toDate) {
-                    hora = hora.toDate().toLocaleTimeString();
-                }
-
-                document.getElementById("info").innerHTML =
-                    "Latitud: " + lat + "<br>" +
-                    "Longitud: " + lon + "<br>" +
-                    "Hora: " + hora;
 
             });
 
