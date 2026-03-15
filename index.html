@@ -12,26 +12,50 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css"
+        rel="stylesheet" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
     <style>
         body {
             margin: 0;
             font-family: Arial;
             text-align: center;
-        }
-
-        h1 {
-            margin: 10px;
+            background: #f4f4f4;
         }
 
         #map {
             width: 100%;
-            height: 80vh;
+            height: 60vh;
         }
 
-        #info {
-            font-size: 18px;
+        .panel {
+            background: white;
+            margin: 10px;
             padding: 10px;
-            background: #f2f2f2;
+            border-radius: 8px;
+        }
+
+        .dispositivo {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 8px;
+        }
+
+        .alerta {
+            color: red;
+            font-weight: bold;
+            margin: 4px;
+        }
+
+        .botonMapa {
+            margin-top: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
         }
     </style>
 
@@ -39,19 +63,34 @@
 
 <body>
 
-    <h1>Proyecto de Mapbox</h1>
-    <h3>Moises Alejandro Choque Choque</h3>
+    <h1>Proyecto Mapbox</h1>
+
+    <button onclick="iniciarDibujo()">Crear Geocerca</button>
+    <button onclick="finalizarGeocerca()">Finalizar Geocerca</button>
 
     <div id="map"></div>
 
-    <div id="info">
-        Esperando ubicación...
+    <div class="panel">
+        <h3 id="contador">Dispositivos conectados: 0</h3>
+        <div id="dispositivos"></div>
     </div>
+
+    <div class="panel">
+        <h3>Alertas</h3>
+        <div id="alertas"></div>
+    </div>
+
+    <audio id="alarma">
+        <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+    </audio>
 
     <script>
 
+        const estadoAnterior = {};
+
         const part1 = "pk.";
         const part2 = "eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag";
+
         mapboxgl.accessToken = part1 + part2;
 
         const map = new mapboxgl.Map({
@@ -61,13 +100,55 @@
             zoom: 14
         });
 
+        const draw = new MapboxDraw({
+            displayControlsDefault: false,
+            controls: { polygon: true, trash: true },
+            styles: [
+                {
+                    id: 'fill',
+                    type: 'fill',
+                    filter: ['all', ['==', '$type', 'Polygon']],
+                    paint: { 'fill-color': '#00ff00', 'fill-opacity': 0.3 }
+                },
+                {
+                    id: 'line',
+                    type: 'line',
+                    filter: ['all', ['==', '$type', 'Polygon']],
+                    paint: { 'line-color': '#008000', 'line-width': 3 }
+                }
+            ]
+        });
+
+        map.addControl(draw);
+
+        let geocerca = null;
+
+        function iniciarDibujo() {
+            draw.changeMode("draw_polygon");
+        }
+
+        function finalizarGeocerca() {
+
+            const data = draw.getAll();
+
+            if (data.features.length > 0) {
+                geocerca = data.features[0];
+                alert("Geocerca guardada");
+            }
+
+        }
+
+        function centrarMapa(lat, lon) {
+            map.flyTo({
+                center: [lon, lat],
+                zoom: 18
+            });
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSy" + "Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
             authDomain: "mapbox-moises.firebaseapp.com",
-            projectId: "mapbox-moises",
-            storageBucket: "mapbox-moises.firebasestorage.app",
-            messagingSenderId: "1091421930334",
-            appId: "1:1091421930334:web:9d9afad1b2af25e32905cf"
+            projectId: "mapbox-moises"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -76,48 +157,99 @@
 
         const marcadores = {};
 
-        db.collection("ubicaciones")
-            .onSnapshot((snapshot) => {
+        db.collection("ubicaciones").onSnapshot(snapshot => {
 
-                snapshot.docChanges().forEach((change) => {
+            let contador = 0;
+            let html = "";
 
-                    const data = change.doc.data();
-                    const id = change.doc.id;
+            snapshot.forEach(doc => {
 
-                    const lat = data.latitud;
-                    const lon = data.longitud;
+                contador++;
 
-                    if (change.type === "added") {
+                const id = doc.id;
+                const data = doc.data();
 
-                        marcadores[id] = new mapboxgl.Marker({ color: "red" })
-                            .setLngLat([lon, lat])
-                            .addTo(map);
+                const lat = data.latitud;
+                const lon = data.longitud;
 
-                    }
+                let hora = "";
 
-                    if (change.type === "modified") {
+                if (data.hora && data.hora.toDate) {
+                    hora = data.hora.toDate().toLocaleTimeString();
+                }
 
-                        if (marcadores[id]) {
-                            marcadores[id].setLngLat([lon, lat]);
-                        }
+                let dentro = true;
 
-                    }
+                if (geocerca) {
 
-                    let hora = data.hora;
+                    const punto = turf.point([lon, lat]);
 
-                    if (hora && hora.toDate) {
-                        hora = hora.toDate().toLocaleTimeString();
-                    }
+                    dentro = turf.booleanPointInPolygon(punto, geocerca);
 
-                    document.getElementById("info").innerHTML =
-                        "Dispositivo: " + id + "<br>" +
-                        "Latitud: " + lat + "<br>" +
-                        "Longitud: " + lon + "<br>" +
-                        "Hora: " + hora;
+                }
 
-                });
+                const color = dentro ? "green" : "red";
+
+                if (!marcadores[id]) {
+
+                    const marcador = new mapboxgl.Marker({ color: color })
+                        .setLngLat([lon, lat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
+                        .addTo(map);
+
+                    marcadores[id] = marcador;
+
+                } else {
+
+                    marcadores[id].setLngLat([lon, lat]);
+
+                }
+
+                const estado = dentro ? "Dentro" : "Fuera";
+
+                html += `
+
+<div class="dispositivo">
+
+<b>📱 Dispositivo:</b> ${id}<br>
+<b>Estado:</b> ${estado}<br>
+<b>Latitud:</b> ${lat}<br>
+<b>Longitud:</b> ${lon}<br>
+<b>Hora:</b> ${hora}<br>
+
+<button class="botonMapa" onclick="centrarMapa(${lat},${lon})">
+Ver en mapa
+</button>
+
+</div>
+
+`;
+
+                if (estadoAnterior[id] === undefined) {
+                    estadoAnterior[id] = dentro;
+                }
+
+                if (estadoAnterior[id] === true && dentro === false) {
+
+                    const horaActual = new Date().toLocaleTimeString();
+
+                    document.getElementById("alertas").innerHTML +=
+                        "<div class='alerta'>⚠ " + id + " salió de la geocerca - " + horaActual + "</div>";
+
+                    document.getElementById("alarma").play();
+
+                }
+
+                estadoAnterior[id] = dentro;
 
             });
+
+            document.getElementById("contador").innerHTML =
+                "Dispositivos conectados: " + contador;
+
+            document.getElementById("dispositivos").innerHTML = html;
+
+        });
 
     </script>
 
