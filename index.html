@@ -3,211 +3,401 @@
 
 <head>
 
-    <meta charset="utf-8">
-    <title>Proyecto Mapbox</title>
+<meta charset="utf-8">
+<title>Panel de Monitoreo GPS</title>
 
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet"/>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css"
-        rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css" rel="stylesheet"/>
 
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            text-align: center;
-            background: #f4f4f4;
-        }
+<style>
 
-        #map {
-            width: 100%;
-            height: 60vh;
-        }
+body{
+margin:0;
+font-family:Arial;
+background:#1e1e1e;
+color:white;
+}
 
-        .panel {
-            background: white;
-            margin: 10px;
-            padding: 10px;
-            border-radius: 8px;
-        }
+h1{
+background:#111;
+padding:12px;
+margin:0;
+text-align:center;
+}
 
-        .dispositivo {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 10px;
-            margin: 8px;
-        }
+#map{
+width:100%;
+height:60vh;
+border-bottom:3px solid #333;
+}
 
-        .alerta {
-            color: red;
-            font-weight: bold;
-            margin: 4px;
-        }
+button{
+background:#2ecc71;
+border:none;
+padding:10px 16px;
+margin:6px;
+border-radius:6px;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
 
-        .botonMapa {
-            margin-top: 6px;
-            padding: 4px 8px;
-            cursor: pointer;
-        }
-    </style>
+button:hover{
+background:#27ae60;
+}
+
+.panel{
+background:#2b2b2b;
+margin:10px;
+padding:12px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.5);
+}
+
+.dispositivo{
+background:#3a3a3a;
+border-left:5px solid #2ecc71;
+border-radius:6px;
+padding:10px;
+margin:10px 0;
+}
+
+.alerta{
+color:#ff4d4d;
+font-weight:bold;
+margin:6px 0;
+}
+
+.botonMapa{
+margin-top:6px;
+padding:6px 10px;
+background:#3498db;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer;
+}
+
+.botonMapa:hover{
+background:#2980b9;
+}
+
+</style>
 
 </head>
 
 <body>
 
-    <h1>Proyecto Mapbox</h1>
+<h1>Panel de Monitoreo GPS</h1>
 
-    <button onclick="iniciarDibujo()">Crear Geocerca</button>
-    <button onclick="finalizarGeocerca()">Finalizar Geocerca</button>
+<div style="text-align:center">
 
-    <div id="map"></div>
+<button onclick="iniciarDibujo()">Crear Geocerca</button>
+<button onclick="finalizarGeocerca()">Guardar Geocerca</button>
+<button onclick="eliminarGeocerca()">Eliminar Geocerca</button>
 
-    <div class="panel">
-        <h3 id="contador">Dispositivos conectados: 0</h3>
-        <div id="dispositivos"></div>
-    </div>
+</div>
 
-    <div class="panel">
-        <h3>Alertas</h3>
-        <div id="alertas"></div>
-    </div>
+<div id="map"></div>
 
-    <audio id="alarma">
-        <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
-    </audio>
+<div class="panel">
+<h3 id="contador">Dispositivos conectados: 0</h3>
+<div id="dispositivos"></div>
+</div>
 
-    <script>
+<div class="panel">
+<h3>Alertas en vivo</h3>
+<div id="alertas"></div>
+</div>
 
-        const estadoAnterior = {};
+<div class="panel">
+<h3>Historial</h3>
+<div id="historial"></div>
+</div>
 
-        const part1 = "pk.";
-        const part2 = "eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag";
+<audio id="alarma">
+<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+</audio>
 
-        mapboxgl.accessToken = part1 + part2;
+<script>
 
-        const map = new mapboxgl.Map({
-            container: "map",
-            style: "mapbox://styles/mapbox/satellite-streets-v12",
-            center: [-68.15, -16.5],
-            zoom: 14
-        });
+const estadoAnterior={}
+const rutas={}
 
-        const draw = new MapboxDraw({
-            displayControlsDefault: false,
-            controls: { polygon: true, trash: true },
-            styles: [
-                {
-                    id: 'fill',
-                    type: 'fill',
-                    filter: ['all', ['==', '$type', 'Polygon']],
-                    paint: { 'fill-color': '#00ff00', 'fill-opacity': 0.3 }
-                },
-                {
-                    id: 'line',
-                    type: 'line',
-                    filter: ['all', ['==', '$type', 'Polygon']],
-                    paint: { 'line-color': '#008000', 'line-width': 3 }
-                }
-            ]
-        });
+const part1="pk."
+const part2="eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag"
 
-        map.addControl(draw);
+mapboxgl.accessToken=part1+part2
 
-        let geocerca = null;
+const map=new mapboxgl.Map({
+container:"map",
+style:"mapbox://styles/mapbox/satellite-streets-v12",
+center:[-68.15,-16.5],
+zoom:14
+})
 
-        function iniciarDibujo() {
-            draw.changeMode("draw_polygon");
-        }
+/* GEOCERCA VERDE */
 
-        function finalizarGeocerca() {
+const draw=new MapboxDraw({
 
-            const data = draw.getAll();
+displayControlsDefault:false,
+controls:{polygon:true,trash:true},
 
-            if (data.features.length > 0) {
-                geocerca = data.features[0];
-                alert("Geocerca guardada");
-            }
+styles:[
 
-        }
+{
+"id":"polygon-fill",
+"type":"fill",
+"filter":["all",["==","$type","Polygon"]],
+"paint":{
+"fill-color":"#00ff00",
+"fill-opacity":0.3
+}
+},
 
-        function centrarMapa(lat, lon) {
-            map.flyTo({
-                center: [lon, lat],
-                zoom: 18
-            });
-        }
+{
+"id":"polygon-line",
+"type":"line",
+"filter":["all",["==","$type","Polygon"]],
+"paint":{
+"line-color":"#00ff00",
+"line-width":3
+}
+}
 
-        const firebaseConfig = {
-            apiKey: "AIzaSy" + "Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
-            authDomain: "mapbox-moises.firebaseapp.com",
-            projectId: "mapbox-moises"
-        };
+]
 
-        firebase.initializeApp(firebaseConfig);
+})
 
-        const db = firebase.firestore();
+map.addControl(draw)
 
-        const marcadores = {};
+let geocerca=null
 
-        db.collection("ubicaciones").onSnapshot(snapshot => {
+function iniciarDibujo(){
 
-            let contador = 0;
-            let html = "";
+draw.changeMode("draw_polygon")
 
-            snapshot.forEach(doc => {
+}
 
-                contador++;
+/* GUARDAR GEOCERCA */
 
-                const id = doc.id;
-                const data = doc.data();
+function finalizarGeocerca(){
 
-                const lat = data.latitud;
-                const lon = data.longitud;
+const data=draw.getAll()
 
-                let hora = "";
+if(data.features.length===0){
 
-                if (data.hora && data.hora.toDate) {
-                    hora = data.hora.toDate().toLocaleTimeString();
-                }
+alert("No dibujaste ninguna geocerca")
+return
 
-                let dentro = true;
+}
 
-                if (geocerca) {
+geocerca=data.features[0].geometry
 
-                    const punto = turf.point([lon, lat]);
+db.collection("geocerca").doc("poligono").set({
 
-                    dentro = turf.booleanPointInPolygon(punto, geocerca);
+coordenadas:JSON.stringify(geocerca.coordinates)
 
-                }
+})
+.then(()=>{
 
-                const color = dentro ? "green" : "red";
+alert("Geocerca guardada en Firebase")
 
-                if (!marcadores[id]) {
+})
 
-                    const marcador = new mapboxgl.Marker({ color: color })
-                        .setLngLat([lon, lat])
-                        .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
-                        .addTo(map);
+}
 
-                    marcadores[id] = marcador;
+/* ELIMINAR GEOCERCA */
 
-                } else {
+function eliminarGeocerca(){
 
-                    marcadores[id].setLngLat([lon, lat]);
+if(!confirm("¿Seguro que quieres eliminar la geocerca?")){
+return
+}
 
-                }
+draw.deleteAll()
 
-                const estado = dentro ? "Dentro" : "Fuera";
+geocerca=null
 
-                html += `
+db.collection("geocerca").doc("poligono").delete()
+.then(()=>{
+
+alert("Geocerca eliminada")
+
+})
+.catch(error=>{
+
+console.log("Error al eliminar:",error)
+
+})
+
+}
+
+/* CENTRAR MAPA */
+
+function centrarMapa(lat,lon){
+
+map.flyTo({
+center:[lon,lat],
+zoom:18
+})
+
+}
+
+/* FIREBASE */
+
+const firebaseConfig={
+apiKey:"AIzaSy"+"Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
+authDomain:"mapbox-moises.firebaseapp.com",
+projectId:"mapbox-moises"
+}
+
+firebase.initializeApp(firebaseConfig)
+
+const db=firebase.firestore()
+
+const marcadores={}
+
+/* CARGAR GEOCERCA */
+
+db.collection("geocerca").doc("poligono")
+.onSnapshot(doc=>{
+
+if(doc.exists){
+
+const data=doc.data()
+
+geocerca={
+type:"Polygon",
+coordinates:JSON.parse(data.coordenadas)
+}
+
+draw.deleteAll()
+
+draw.add({
+type:"Feature",
+geometry:geocerca
+})
+
+}
+
+})
+
+/* UBICACIONES EN TIEMPO REAL */
+
+db.collection("ubicaciones")
+.onSnapshot(snapshot=>{
+
+let contador=0
+let html=""
+
+snapshot.forEach(doc=>{
+
+contador++
+
+const id=doc.id
+const data=doc.data()
+
+const lat=data.latitud
+const lon=data.longitud
+
+let hora=""
+
+if(data.hora && data.hora.toDate){
+
+hora=data.hora.toDate().toLocaleTimeString()
+
+}
+
+let dentro=true
+
+if(geocerca){
+
+const punto=turf.point([lon,lat])
+const poligono=turf.polygon(geocerca.coordinates)
+
+dentro=turf.booleanPointInPolygon(punto,poligono)
+
+}
+
+const color=dentro?"green":"red"
+
+/* MARCADOR */
+
+if(!marcadores[id]){
+
+const marcador=new mapboxgl.Marker({color:color})
+.setLngLat([lon,lat])
+.setPopup(new mapboxgl.Popup().setHTML("<b>"+id+"</b>"))
+.addTo(map)
+
+marcadores[id]=marcador
+
+}else{
+
+marcadores[id].setLngLat([lon,lat])
+
+}
+
+/* RUTA */
+
+if(!rutas[id]){
+
+rutas[id]=[]
+
+}
+
+rutas[id].push([lon,lat])
+
+const rutaId="ruta-"+id
+
+const geojsonRuta={
+
+type:"Feature",
+
+geometry:{
+type:"LineString",
+coordinates:rutas[id]
+}
+
+}
+
+if(map.getSource(rutaId)){
+
+map.getSource(rutaId).setData(geojsonRuta)
+
+}else{
+
+map.addSource(rutaId,{
+type:"geojson",
+data:geojsonRuta
+})
+
+map.addLayer({
+
+id:rutaId,
+type:"line",
+source:rutaId,
+paint:{
+"line-color":"yellow",
+"line-width":4
+}
+
+})
+
+}
+
+const estado=dentro?"Dentro":"Fuera"
+
+html+=`
 
 <div class="dispositivo">
 
@@ -223,35 +413,91 @@ Ver en mapa
 
 </div>
 
-`;
+`
 
-                if (estadoAnterior[id] === undefined) {
-                    estadoAnterior[id] = dentro;
-                }
+/* DETECTAR ENTRADA Y SALIDA */
 
-                if (estadoAnterior[id] === true && dentro === false) {
+if(estadoAnterior[id]===undefined){
 
-                    const horaActual = new Date().toLocaleTimeString();
+estadoAnterior[id]=dentro
 
-                    document.getElementById("alertas").innerHTML +=
-                        "<div class='alerta'>⚠ " + id + " salió de la geocerca - " + horaActual + "</div>";
+}
 
-                    document.getElementById("alarma").play();
+if(estadoAnterior[id]===true && dentro===false){
 
-                }
+const horaActual=new Date()
 
-                estadoAnterior[id] = dentro;
+db.collection("alertas").add({
 
-            });
+dispositivo:id,
+tipo:"SALIO",
+hora:horaActual
 
-            document.getElementById("contador").innerHTML =
-                "Dispositivos conectados: " + contador;
+})
 
-            document.getElementById("dispositivos").innerHTML = html;
+document.getElementById("alertas").innerHTML+=
+"<div class='alerta'>⚠ "+id+" salió de la geocerca</div>"
 
-        });
+document.getElementById("alarma").play()
 
-    </script>
+}
+
+if(estadoAnterior[id]===false && dentro===true){
+
+const horaActual=new Date()
+
+db.collection("alertas").add({
+
+dispositivo:id,
+tipo:"ENTRO",
+hora:horaActual
+
+})
+
+document.getElementById("alertas").innerHTML+=
+"<div style='color:#2ecc71'>✔ "+id+" volvió a entrar</div>"
+
+}
+
+estadoAnterior[id]=dentro
+
+})
+
+document.getElementById("contador").innerHTML=
+"Dispositivos conectados: "+contador
+
+document.getElementById("dispositivos").innerHTML=html
+
+})
+
+/* HISTORIAL */
+
+db.collection("alertas")
+.orderBy("hora","desc")
+.limit(20)
+.onSnapshot(snapshot=>{
+
+let html=""
+
+snapshot.forEach(doc=>{
+
+const data=doc.data()
+
+const hora=data.hora.toDate().toLocaleTimeString()
+
+html+=`
+<div>
+${data.dispositivo} - ${data.tipo} - ${hora}
+</div>
+`
+
+})
+
+document.getElementById("historial").innerHTML=html
+
+})
+
+</script>
 
 </body>
 
