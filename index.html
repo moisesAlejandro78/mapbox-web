@@ -307,6 +307,7 @@
 
                     const lat = data.latitud
                     const lon = data.longitud
+                    
 
                     let hora = ""
 
@@ -333,20 +334,7 @@
 
                     if (!marcadores[id]) {
 
-                        const el = document.createElement("div")
-
-                        el.style.background = color
-                        el.style.color = "white"
-                        el.style.padding = "4px 8px"
-                        el.style.borderRadius = "6px"
-                        el.style.fontSize = "12px"
-                        el.style.fontWeight = "bold"
-                        el.style.whiteSpace = "nowrap"
-                        el.style.boxShadow = "0 0 5px rgba(0,0,0,0.5)"
-
-                        el.innerText = id
-
-                        const marcador = new mapboxgl.Marker(el)
+                        const marcador = new mapboxgl.Marker({ color: color })
                             .setLngLat([lon, lat])
                             .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
                             .addTo(map)
@@ -356,10 +344,8 @@
                     } else {
 
                         marcadores[id].setLngLat([lon, lat])
-                        marcadores[id].getElement().style.background = color
 
                     }
-
 
                     /* RUTA */
 
