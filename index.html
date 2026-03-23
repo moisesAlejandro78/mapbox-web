@@ -194,22 +194,22 @@ function finalizarGeocerca(){
 const data=draw.getAll()
 
 if(data.features.length===0){
-
 alert("No dibujaste ninguna geocerca")
 return
-
 }
 
-geocerca=data.features[0].geometry
+const poligono=data.features[0].geometry
 
-db.collection("geocerca").doc("poligono").set({
+db.collection("geocerca").add({
 
-coordenadas:JSON.stringify(geocerca.coordinates)
+coordenadas: JSON.stringify(poligono.coordinates),
+nombre: "Geocerca " + new Date().getTime()
 
 })
 .then(()=>{
 
-alert("Geocerca guardada en Firebase")
+alert("Geocerca guardada correctamente")
+draw.deleteAll()
 
 })
 
@@ -219,27 +219,26 @@ alert("Geocerca guardada en Firebase")
 
 function eliminarGeocerca(){
 
-if(!confirm("¿Seguro que quieres eliminar la geocerca?")){
+if(!confirm("¿Seguro que quieres eliminar todas las geocercas?")){
 return
 }
 
-draw.deleteAll()
+db.collection("geocerca").get()
+.then(snapshot=>{
 
-geocerca=null
-
-db.collection("geocerca").doc("poligono").delete()
-.then(()=>{
-
-alert("Geocerca eliminada")
-
+snapshot.forEach(doc=>{
+doc.ref.delete()
 })
-.catch(error=>{
 
-console.log("Error al eliminar:",error)
+draw.deleteAll()
+geocercas=[]
+
+alert("Todas las geocercas eliminadas")
 
 })
 
 }
+
 
 /* CENTRAR MAPA */
 
@@ -268,26 +267,32 @@ const marcadores={}
 
 /* CARGAR GEOCERCA */
 
-db.collection("geocerca").doc("poligono")
-.onSnapshot(doc=>{
+let geocercas = []
 
-if(doc.exists){
+db.collection("geocerca")
+.onSnapshot(snapshot=>{
 
-const data=doc.data()
-
-geocerca={
-type:"Polygon",
-coordinates:JSON.parse(data.coordenadas)
-}
+geocercas = []
 
 draw.deleteAll()
 
+snapshot.forEach(doc=>{
+
+const data = doc.data()
+
+const geo = {
+type: "Polygon",
+coordinates: JSON.parse(data.coordenadas)
+}
+
+geocercas.push(geo)
+
 draw.add({
-type:"Feature",
-geometry:geocerca
+type: "Feature",
+geometry: geo
 })
 
-}
+})
 
 })
 
@@ -317,16 +322,24 @@ hora=data.hora.toDate().toLocaleTimeString()
 
 }
 
-let dentro=true
+let dentro=false
 
-if(geocerca){
+if(geocercas.length>0){
 
-const punto=turf.point([lon,lat])
-const poligono=turf.polygon(geocerca.coordinates)
+const punto = turf.point([lon,lat])
 
-dentro=turf.booleanPointInPolygon(punto,poligono)
+geocercas.forEach(g=>{
+
+const poligono = turf.polygon(g.coordinates)
+
+if(turf.booleanPointInPolygon(punto,poligono)){
+dentro=true
+}
+
+})
 
 }
+
 
 const color=dentro?"green":"red"
 
