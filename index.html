@@ -179,7 +179,7 @@ styles:[
 
 map.addControl(draw)
 
-let geocerca=null
+//let geocerca=null
 
 function iniciarDibujo(){
 
@@ -345,7 +345,9 @@ const color=dentro?"green":"red"
 
 /* MARCADOR */
 
-if(!marcadores[id]){
+if(marcadores[id]){
+marcadores[id].remove()
+}
 
 const marcador=new mapboxgl.Marker({color:color})
 .setLngLat([lon,lat])
@@ -354,11 +356,6 @@ const marcador=new mapboxgl.Marker({color:color})
 
 marcadores[id]=marcador
 
-}else{
-
-marcadores[id].setLngLat([lon,lat])
-
-}
 
 /* RUTA */
 
