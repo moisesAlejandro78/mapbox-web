@@ -190,29 +190,30 @@
 
         function finalizarGeocerca() {
 
-            const data = draw.getAll()
+    const data = draw.getAll()
 
-            if (data.features.length === 0) {
-                alert("No dibujaste ninguna geocerca")
-                return
-            }
+    if (data.features.length === 0) {
+        alert("No dibujaste ninguna geocerca")
+        return
+    }
 
-            const poligono = data.features[0].geometry
+    data.features.forEach(feature => {
 
-            db.collection("geocerca").add({
+        const poligono = feature.geometry
 
-                coordenadas: JSON.stringify(poligono.coordinates),
-                nombre: "Geocerca " + new Date().getTime()
+        db.collection("geocerca").add({
 
-            })
-                .then(() => {
+            coordenadas: JSON.stringify(poligono.coordinates),
+            nombre: "Geocerca " + new Date().getTime()
 
-                    alert("Geocerca guardada correctamente")
-                    //draw.deleteAll()
+        })
 
-                })
+    })
 
-        }
+    alert("Geocercas guardadas correctamente")
+
+}
+
 
         /* ELIMINAR GEOCERCA */
 
