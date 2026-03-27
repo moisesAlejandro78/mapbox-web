@@ -178,6 +178,34 @@
 
         map.addControl(draw)
 
+        map.on("load", () => {
+
+            map.addSource("nombres-geocercas", {
+                type: "geojson",
+                data: {
+                    type: "FeatureCollection",
+                    features: []
+                }
+            })
+
+            map.addLayer({
+                id: "labels-geocercas",
+                type: "symbol",
+                source: "nombres-geocercas",
+                layout: {
+                    "text-field": ["get", "nombre"],
+                    "text-size": 14,
+                    "text-offset": [0, 0],
+                    "text-anchor": "center"
+                },
+                paint: {
+                    "text-color": "#00ff00"
+                }
+            })
+
+        })
+
+
         //let geocerca=null
 
         function iniciarDibujo() {
@@ -197,6 +225,13 @@
                 return
             }
 
+            const nombre = prompt("Ingrese nombre de la geocerca")
+
+            if (!nombre) {
+                alert("Debes escribir un nombre")
+                return
+            }
+
             data.features.forEach(feature => {
 
                 const poligono = feature.geometry
@@ -204,15 +239,18 @@
                 db.collection("geocerca").add({
 
                     coordenadas: JSON.stringify(poligono.coordinates),
-                    nombre: "Geocerca " + new Date().getTime()
+                    nombre: nombre
 
                 })
 
             })
 
-            alert("Geocercas guardadas correctamente")
+            draw.deleteAll()
+
+            alert("Geocerca guardada correctamente")
 
         }
+
 
 
         /* ELIMINAR GEOCERCA */
@@ -290,11 +328,57 @@
                     draw.add({
                         id: doc.id,
                         type: "Feature",
-                        geometry: geo
+                        geometry: geo,
+                        properties: {
+                            nombre: data.nombre
+                        }
                     })
 
 
+
                 })
+                const featuresLabels = []
+
+snapshot.forEach(doc => {
+
+    const data = doc.data()
+
+    const geo = {
+        type: "Polygon",
+        coordinates: JSON.parse(data.coordenadas)
+    }
+
+    geocercas.push(geo)
+
+    draw.add({
+        id: doc.id,
+        type: "Feature",
+        geometry: geo,
+        properties: {
+            nombre: data.nombre
+        }
+    })
+
+    // centro del poligono
+    const centro = turf.centroid({
+        type: "Feature",
+        geometry: geo
+    })
+
+    featuresLabels.push({
+        type: "Feature",
+        geometry: centro.geometry,
+        properties: {
+            nombre: data.nombre
+        }
+    })
+
+})
+
+map.getSource("nombres-geocercas").setData({
+    type: "FeatureCollection",
+    features: featuresLabels
+})
 
             })
 
