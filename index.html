@@ -3,411 +3,410 @@
 
 <head>
 
-<meta charset="utf-8">
-<title>Panel de Monitoreo GPS</title>
+    <meta charset="utf-8">
+    <title>Panel de Monitoreo GPS</title>
 
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet"/>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet" />
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css" rel="stylesheet"/>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css"
+        rel="stylesheet" />
 
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
-<style>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #1e1e1e;
+            color: white;
+        }
 
-body{
-margin:0;
-font-family:Arial;
-background:#1e1e1e;
-color:white;
-}
+        h1 {
+            background: #111;
+            padding: 12px;
+            margin: 0;
+            text-align: center;
+        }
 
-h1{
-background:#111;
-padding:12px;
-margin:0;
-text-align:center;
-}
+        #map {
+            width: 100%;
+            height: 60vh;
+            border-bottom: 3px solid #333;
+        }
 
-#map{
-width:100%;
-height:60vh;
-border-bottom:3px solid #333;
-}
+        button {
+            background: #2ecc71;
+            border: none;
+            padding: 10px 16px;
+            margin: 6px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-button{
-background:#2ecc71;
-border:none;
-padding:10px 16px;
-margin:6px;
-border-radius:6px;
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
+        button:hover {
+            background: #27ae60;
+        }
 
-button:hover{
-background:#27ae60;
-}
+        .panel {
+            background: #2b2b2b;
+            margin: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
 
-.panel{
-background:#2b2b2b;
-margin:10px;
-padding:12px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
-}
+        .dispositivo {
+            background: #3a3a3a;
+            border-left: 5px solid #2ecc71;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+        }
 
-.dispositivo{
-background:#3a3a3a;
-border-left:5px solid #2ecc71;
-border-radius:6px;
-padding:10px;
-margin:10px 0;
-}
+        .alerta {
+            color: #ff4d4d;
+            font-weight: bold;
+            margin: 6px 0;
+        }
 
-.alerta{
-color:#ff4d4d;
-font-weight:bold;
-margin:6px 0;
-}
+        .botonMapa {
+            margin-top: 6px;
+            padding: 6px 10px;
+            background: #3498db;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+        }
 
-.botonMapa{
-margin-top:6px;
-padding:6px 10px;
-background:#3498db;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer;
-}
-
-.botonMapa:hover{
-background:#2980b9;
-}
-
-</style>
+        .botonMapa:hover {
+            background: #2980b9;
+        }
+    </style>
 
 </head>
 
 <body>
 
-<h1>Panel de Monitoreo GPS</h1>
+    <h1>Panel de Monitoreo GPS</h1>
 
-<div style="text-align:center">
+    <div style="text-align:center">
 
-<button onclick="iniciarDibujo()">Crear Geocerca</button>
-<button onclick="finalizarGeocerca()">Guardar Geocerca</button>
-<button onclick="eliminarGeocerca()">Eliminar Geocerca</button>
+        <button onclick="iniciarDibujo()">Crear Geocerca</button>
+        <button onclick="finalizarGeocerca()">Guardar Geocerca</button>
+        <button onclick="eliminarGeocerca()">Eliminar Geocerca</button>
 
-</div>
+    </div>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<div class="panel">
-<h3 id="contador">Dispositivos conectados: 0</h3>
-<div id="dispositivos"></div>
-</div>
+    <div class="panel">
+        <h3 id="contador">Dispositivos conectados: 0</h3>
+        <div id="dispositivos"></div>
+    </div>
 
-<div class="panel">
-<h3>Alertas en vivo</h3>
-<div id="alertas"></div>
-</div>
+    <div class="panel">
+        <h3>Alertas en vivo</h3>
+        <div id="alertas"></div>
+    </div>
 
-<div class="panel">
-<h3>Historial</h3>
-<div id="historial"></div>
-</div>
+    <div class="panel">
+        <h3>Historial</h3>
+        <div id="historial"></div>
+    </div>
 
-<audio id="alarma">
-<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
-</audio>
+    <audio id="alarma">
+        <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+    </audio>
 
-<script>
+    <script>
 
-const estadoAnterior={}
-const rutas={}
+        const estadoAnterior = {}
+        const rutas = {}
 
-const part1="pk."
-const part2="eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag"
+        const part1 = "pk."
+        const part2 = "eyJ1IjoibW9pc2VzNzgiLCJhIjoiY21tNWIwMWg4MDI5MDJvcHM1OGpxbHVwcyJ9.dTboVHBSjC8nakpKg6M0ag"
 
-mapboxgl.accessToken=part1+part2
+        mapboxgl.accessToken = part1 + part2
 
-const map=new mapboxgl.Map({
-container:"map",
-style:"mapbox://styles/mapbox/satellite-streets-v12",
-center:[-68.15,-16.5],
-zoom:14
-})
+        const map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/satellite-streets-v12",
+            center: [-68.15, -16.5],
+            zoom: 14
+        })
 
-/* GEOCERCA VERDE */
+        /* GEOCERCA VERDE */
 
-const draw=new MapboxDraw({
+        const draw = new MapboxDraw({
 
-displayControlsDefault:false,
-controls:{polygon:true,trash:true},
+            displayControlsDefault: false,
+            controls: { polygon: true, trash: true },
 
-styles:[
+            styles: [
 
-{
-"id":"polygon-fill",
-"type":"fill",
-"filter":["all",["==","$type","Polygon"]],
-"paint":{
-"fill-color":"#00ff00",
-"fill-opacity":0.3
-}
-},
+                {
+                    "id": "polygon-fill",
+                    "type": "fill",
+                    "filter": ["all", ["==", "$type", "Polygon"]],
+                    "paint": {
+                        "fill-color": "#00ff00",
+                        "fill-opacity": 0.3
+                    }
+                },
 
-{
-"id":"polygon-line",
-"type":"line",
-"filter":["all",["==","$type","Polygon"]],
-"paint":{
-"line-color":"#00ff00",
-"line-width":3
-}
-}
+                {
+                    "id": "polygon-line",
+                    "type": "line",
+                    "filter": ["all", ["==", "$type", "Polygon"]],
+                    "paint": {
+                        "line-color": "#00ff00",
+                        "line-width": 3
+                    }
+                }
 
-]
+            ]
 
-})
+        })
 
-map.addControl(draw)
+        map.addControl(draw)
 
-//let geocerca=null
+        //let geocerca=null
 
-function iniciarDibujo(){
+        function iniciarDibujo() {
 
-draw.changeMode("draw_polygon")
+            draw.changeMode("draw_polygon")
 
-}
+        }
 
-/* GUARDAR GEOCERCA */
+        /* GUARDAR GEOCERCA */
 
-function finalizarGeocerca(){
+        function finalizarGeocerca() {
 
-const data=draw.getAll()
+            const data = draw.getAll()
 
-if(data.features.length===0){
-alert("No dibujaste ninguna geocerca")
-return
-}
+            if (data.features.length === 0) {
+                alert("No dibujaste ninguna geocerca")
+                return
+            }
 
-const poligono=data.features[0].geometry
+            const poligono = data.features[0].geometry
 
-db.collection("geocerca").add({
+            db.collection("geocerca").add({
 
-coordenadas: JSON.stringify(poligono.coordinates),
-nombre: "Geocerca " + new Date().getTime()
+                coordenadas: JSON.stringify(poligono.coordinates),
+                nombre: "Geocerca " + new Date().getTime()
 
-})
-.then(()=>{
+            })
+                .then(() => {
 
-alert("Geocerca guardada correctamente")
-//draw.deleteAll()
+                    alert("Geocerca guardada correctamente")
+                    //draw.deleteAll()
 
-})
+                })
 
-}
+        }
 
-/* ELIMINAR GEOCERCA */
+        /* ELIMINAR GEOCERCA */
 
-function eliminarGeocerca(){
+        function eliminarGeocerca() {
 
-if(!confirm("¿Seguro que quieres eliminar todas las geocercas?")){
-return
-}
+            if (!confirm("¿Seguro que quieres eliminar todas las geocercas?")) {
+                return
+            }
 
-db.collection("geocerca").get()
-.then(snapshot=>{
+            db.collection("geocerca").get()
+                .then(snapshot => {
 
-snapshot.forEach(doc=>{
-doc.ref.delete()
-})
+                    snapshot.forEach(doc => {
+                        doc.ref.delete()
+                    })
 
-draw.deleteAll()
-geocercas=[]
+                    draw.deleteAll()
+                    geocercas = []
 
-alert("Todas las geocercas eliminadas")
+                    alert("Todas las geocercas eliminadas")
 
-})
+                })
 
-}
+        }
 
 
-/* CENTRAR MAPA */
+        /* CENTRAR MAPA */
 
-function centrarMapa(lat,lon){
+        function centrarMapa(lat, lon) {
 
-map.flyTo({
-center:[lon,lat],
-zoom:20
-})
+            map.flyTo({
+                center: [lon, lat],
+                zoom: 20
+            })
 
-}
+        }
 
-/* FIREBASE */
+        /* FIREBASE */
 
-const firebaseConfig={
-apiKey:"AIzaSy"+"Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
-authDomain:"mapbox-moises.firebaseapp.com",
-projectId:"mapbox-moises"
-}
+        const firebaseConfig = {
+            apiKey: "AIzaSy" + "Bx3yaSKnebWEZu2pp9jAnmj-43fk3FIig",
+            authDomain: "mapbox-moises.firebaseapp.com",
+            projectId: "mapbox-moises"
+        }
 
-firebase.initializeApp(firebaseConfig)
+        firebase.initializeApp(firebaseConfig)
 
-const db=firebase.firestore()
+        const db = firebase.firestore()
 
-const marcadores={}
+        const marcadores = {}
 
-/* CARGAR GEOCERCA */
+        /* CARGAR GEOCERCA */
 
-let geocercas = []
+        let geocercas = []
 
-db.collection("geocerca")
-.onSnapshot(snapshot=>{
+        db.collection("geocerca")
+            .onSnapshot(snapshot => {
 
-geocercas = []
+                geocercas = []
 
-draw.deleteAll()
+                draw.deleteAll()
 
-snapshot.forEach(doc=>{
+                snapshot.forEach(doc => {
 
-const data = doc.data()
+                    const data = doc.data()
 
-const geo = {
-type: "Polygon",
-coordinates: JSON.parse(data.coordenadas)
-}
+                    const geo = {
+                        type: "Polygon",
+                        coordinates: JSON.parse(data.coordenadas)
+                    }
 
-geocercas.push(geo)
+                    geocercas.push(geo)
 
-draw.add({
-type: "Feature",
-geometry: geo
-})
+                    draw.add({
+                        type: "Feature",
+                        geometry: geo
+                    })
 
-})
+                })
 
-})
+            })
 
-/* UBICACIONES EN TIEMPO REAL */
+        /* UBICACIONES EN TIEMPO REAL */
 
-db.collection("ubicaciones")
-.onSnapshot(snapshot=>{
+        db.collection("ubicaciones")
+            .onSnapshot(snapshot => {
 
-let contador=0
-let html=""
+                let contador = 0
+                let html = ""
 
-snapshot.forEach(doc=>{
+                snapshot.forEach(doc => {
 
-contador++
+                    contador++
 
-const id=doc.id
-const data=doc.data()
+                    const id = doc.id
+                    const data = doc.data()
 
-const lat=data.latitud
-const lon=data.longitud
+                    const lat = data.latitud
+                    const lon = data.longitud
 
-let hora=""
+                    let hora = ""
 
-if(data.hora && data.hora.toDate){
+                    if (data.hora && data.hora.toDate) {
 
-hora=data.hora.toDate().toLocaleTimeString()
+                        hora = data.hora.toDate().toLocaleTimeString()
 
-}
+                    }
 
-let dentro=false
+                    let dentro = false
 
-if(geocercas.length>0){
+                    if (geocercas.length > 0) {
 
-const punto = turf.point([lon,lat])
+                        const punto = turf.point([lon, lat])
 
-geocercas.forEach(g=>{
+                        geocercas.forEach(g => {
 
-const poligono = turf.polygon(g.coordinates)
+                            const poligono = turf.polygon(g.coordinates)
 
-if(turf.booleanPointInPolygon(punto,poligono)){
-dentro=true
-}
+                            if (turf.booleanPointInPolygon(punto, poligono)) {
+                                dentro = true
+                            }
 
-})
+                        })
 
-}
+                    }
 
 
-const color=dentro?"green":"red"
+                    const color = dentro ? "green" : "red"
 
-/* MARCADOR */
+                    /* MARCADOR */
 
-if(marcadores[id]){
-marcadores[id].remove()
-}
+                    if (marcadores[id]) {
+                        marcadores[id].remove()
+                    }
 
-const marcador=new mapboxgl.Marker({color:color})
-.setLngLat([lon,lat])
-.setPopup(new mapboxgl.Popup().setHTML("<b>"+id+"</b>"))
-.addTo(map)
+                    const marcador = new mapboxgl.Marker({ color: color })
+                        .setLngLat([lon, lat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
+                        .addTo(map)
 
-marcadores[id]=marcador
+                    marcadores[id] = marcador
 
 
-/* RUTA */
+                    /* RUTA */
 
-if(!rutas[id]){
+                    if (!rutas[id]) {
 
-rutas[id]=[]
+                        rutas[id] = []
 
-}
+                    }
 
-rutas[id].push([lon,lat])
+                    rutas[id].push([lon, lat])
 
-const rutaId="ruta-"+id
+                    const rutaId = "ruta-" + id
 
-const geojsonRuta={
+                    const geojsonRuta = {
 
-type:"Feature",
+                        type: "Feature",
 
-geometry:{
-type:"LineString",
-coordinates:rutas[id]
-}
+                        geometry: {
+                            type: "LineString",
+                            coordinates: rutas[id]
+                        }
 
-}
+                    }
 
-if(map.getSource(rutaId)){
+                    if (map.getSource(rutaId)) {
 
-map.getSource(rutaId).setData(geojsonRuta)
+                        map.getSource(rutaId).setData(geojsonRuta)
 
-}else{
+                    } else {
 
-map.addSource(rutaId,{
-type:"geojson",
-data:geojsonRuta
-})
+                        map.addSource(rutaId, {
+                            type: "geojson",
+                            data: geojsonRuta
+                        })
 
-map.addLayer({
+                        map.addLayer({
 
-id:rutaId,
-type:"line",
-source:rutaId,
-paint:{
-"line-color":"yellow",
-"line-width":4
-}
+                            id: rutaId,
+                            type: "line",
+                            source: rutaId,
+                            paint: {
+                                "line-color": "yellow",
+                                "line-width": 4
+                            }
 
-})
+                        })
 
-}
+                    }
 
-const estado=dentro?"Dentro":"Fuera"
+                    const estado = dentro ? "Dentro" : "Fuera"
 
-html+=`
+                    html += `
 
 <div class="dispositivo">
 
@@ -425,89 +424,89 @@ Ver en mapa
 
 `
 
-/* DETECTAR ENTRADA Y SALIDA */
+                    /* DETECTAR ENTRADA Y SALIDA */
 
-if(estadoAnterior[id]===undefined){
+                    if (estadoAnterior[id] === undefined) {
 
-estadoAnterior[id]=dentro
+                        estadoAnterior[id] = dentro
 
-}
+                    }
 
-if(estadoAnterior[id]===true && dentro===false){
+                    if (estadoAnterior[id] === true && dentro === false) {
 
-const horaActual=new Date()
+                        const horaActual = new Date()
 
-db.collection("alertas").add({
+                        db.collection("alertas").add({
 
-dispositivo:id,
-tipo:"SALIO",
-hora:horaActual
+                            dispositivo: id,
+                            tipo: "SALIO",
+                            hora: horaActual
 
-})
+                        })
 
-document.getElementById("alertas").innerHTML+=
-"<div class='alerta'>⚠ "+id+" salió de la geocerca</div>"
+                        document.getElementById("alertas").innerHTML +=
+                            "<div class='alerta'>⚠ " + id + " salió de la geocerca</div>"
 
-document.getElementById("alarma").play()
+                        document.getElementById("alarma").play()
 
-}
+                    }
 
-if(estadoAnterior[id]===false && dentro===true){
+                    if (estadoAnterior[id] === false && dentro === true) {
 
-const horaActual=new Date()
+                        const horaActual = new Date()
 
-db.collection("alertas").add({
+                        db.collection("alertas").add({
 
-dispositivo:id,
-tipo:"ENTRO",
-hora:horaActual
+                            dispositivo: id,
+                            tipo: "ENTRO",
+                            hora: horaActual
 
-})
+                        })
 
-document.getElementById("alertas").innerHTML+=
-"<div style='color:#2ecc71'>✔ "+id+" volvió a entrar</div>"
+                        document.getElementById("alertas").innerHTML +=
+                            "<div style='color:#2ecc71'>✔ " + id + " volvió a entrar</div>"
 
-}
+                    }
 
-estadoAnterior[id]=dentro
+                    estadoAnterior[id] = dentro
 
-})
+                })
 
-document.getElementById("contador").innerHTML=
-"Dispositivos conectados: "+contador
+                document.getElementById("contador").innerHTML =
+                    "Dispositivos conectados: " + contador
 
-document.getElementById("dispositivos").innerHTML=html
+                document.getElementById("dispositivos").innerHTML = html
 
-})
+            })
 
-/* HISTORIAL */
+        /* HISTORIAL */
 
-db.collection("alertas")
-.orderBy("hora","desc")
-.limit(20)
-.onSnapshot(snapshot=>{
+        db.collection("alertas")
+            .orderBy("hora", "desc")
+            .limit(20)
+            .onSnapshot(snapshot => {
 
-let html=""
+                let html = ""
 
-snapshot.forEach(doc=>{
+                snapshot.forEach(doc => {
 
-const data=doc.data()
+                    const data = doc.data()
 
-const hora=data.hora.toDate().toLocaleTimeString()
+                    const hora = data.hora.toDate().toLocaleTimeString()
 
-html+=`
+                    html += `
 <div>
 ${data.dispositivo} - ${data.tipo} - ${hora}
 </div>
 `
 
-})
+                })
 
-document.getElementById("historial").innerHTML=html
+                document.getElementById("historial").innerHTML = html
 
-})
+            })
 
-</script>
+    </script>
 
 </body>
 
