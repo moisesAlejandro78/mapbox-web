@@ -218,38 +218,34 @@
 
         function finalizarGeocerca() {
 
-            const data = draw.getAll()
+    const data = draw.getAll()
 
-            if (data.features.length === 0) {
-                alert("No dibujaste ninguna geocerca")
-                return
-            }
+    if (data.features.length === 0) {
+        alert("No dibujaste ninguna geocerca")
+        return
+    }
 
-            const nombre = prompt("Ingrese nombre de la geocerca")
+    const nombre = prompt("Ingrese nombre de la geocerca")
 
-            if (!nombre) {
-                alert("Debes escribir un nombre")
-                return
-            }
+    if (!nombre) return
 
-            data.features.forEach(feature => {
+    const ultimaGeocerca = data.features[data.features.length - 1]
 
-                const poligono = feature.geometry
+    const poligono = ultimaGeocerca.geometry
 
-                db.collection("geocerca").add({
+    db.collection("geocerca").add({
 
-                    coordenadas: JSON.stringify(poligono.coordinates),
-                    nombre: nombre
+        coordenadas: JSON.stringify(poligono.coordinates),
+        nombre: nombre
 
-                })
+    })
 
-            })
+    draw.deleteAll()
 
-            draw.deleteAll()
+    alert("Geocerca guardada correctamente")
 
-            alert("Geocerca guardada correctamente")
+}
 
-        }
 
 
 
@@ -307,80 +303,61 @@
 
         let geocercas = []
 
-        db.collection("geocerca")
-            .onSnapshot(snapshot => {
+       db.collection("geocerca")
+.onSnapshot(snapshot => {
 
-                geocercas = []
+    geocercas = []
 
-                draw.deleteAll()
+    draw.deleteAll()
 
-                snapshot.forEach(doc => {
+    const featuresLabels = []
 
-                    const data = doc.data()
+    snapshot.forEach(doc => {
 
-                    const geo = {
-                        type: "Polygon",
-                        coordinates: JSON.parse(data.coordenadas)
-                    }
+        const data = doc.data()
 
-                    geocercas.push(geo)
+        const geo = {
+            type: "Polygon",
+            coordinates: JSON.parse(data.coordenadas)
+        }
 
-                    draw.add({
-                        id: doc.id,
-                        type: "Feature",
-                        geometry: geo,
-                        properties: {
-                            nombre: data.nombre
-                        }
-                    })
+        geocercas.push(geo)
 
+        draw.add({
+            id: doc.id,
+            type: "Feature",
+            geometry: geo,
+            properties: {
+                nombre: data.nombre
+            }
+        })
 
+        const centro = turf.centroid({
+            type: "Feature",
+            geometry: geo
+        })
 
-                })
-                const featuresLabels = []
+        featuresLabels.push({
+            type: "Feature",
+            geometry: centro.geometry,
+            properties: {
+                nombre: data.nombre
+            }
+        })
 
-snapshot.forEach(doc => {
+    })
 
-    const data = doc.data()
+    if (map.getSource("nombres-geocercas")) {
 
-    const geo = {
-        type: "Polygon",
-        coordinates: JSON.parse(data.coordenadas)
+        map.getSource("nombres-geocercas").setData({
+            type: "FeatureCollection",
+            features: featuresLabels
+        })
+
     }
 
-    geocercas.push(geo)
-
-    draw.add({
-        id: doc.id,
-        type: "Feature",
-        geometry: geo,
-        properties: {
-            nombre: data.nombre
-        }
-    })
-
-    // centro del poligono
-    const centro = turf.centroid({
-        type: "Feature",
-        geometry: geo
-    })
-
-    featuresLabels.push({
-        type: "Feature",
-        geometry: centro.geometry,
-        properties: {
-            nombre: data.nombre
-        }
-    })
-
 })
 
-map.getSource("nombres-geocercas").setData({
-    type: "FeatureCollection",
-    features: featuresLabels
-})
-
-            })
 
         /* UBICACIONES EN TIEMPO REAL */
 
