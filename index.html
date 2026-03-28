@@ -121,6 +121,11 @@
         <h3>Historial</h3>
         <div id="historial"></div>
     </div>
+    <div class="panel">
+    <h3>Geocercas</h3>
+    <div id="geocercasPanel"></div>
+</div>
+
 
     <audio id="alarma">
         <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
@@ -317,9 +322,15 @@
         const data = doc.data()
 
         const geo = {
-            type: "Polygon",
-            coordinates: JSON.parse(data.coordenadas)
-        }
+    id: doc.id,
+    type: "Polygon",
+    coordinates: JSON.parse(data.coordenadas),
+    nombre: data.nombre,
+    dispositivos: data.dispositivos || []
+}
+
+geocercas.push(geo)
+
 
         geocercas.push(geo)
 
@@ -357,6 +368,65 @@
     }
 
 })
+//esta es otra geocerca
+db.collection("geocerca")
+.onSnapshot(snapshot => {
+
+    let html = ""
+
+    snapshot.forEach(doc => {
+
+        const data = doc.data()
+
+        html += `
+        <div class="dispositivo">
+
+            <b>Nombre:</b> ${data.nombre}<br>
+            <b>ID:</b> ${doc.id}<br>
+<b>Dispositivos:</b> ${(data.dispositivos || []).join(", ")}<br>
+
+
+            <button onclick="vincularDispositivo('${doc.id}')">
+                Vincular dispositivos
+            </button>
+
+        </div>
+        `
+    })
+
+    document.getElementById("geocercasPanel").innerHTML = html
+
+})
+function vincularDispositivo(geocercaId) {
+
+    db.collection("ubicaciones").get()
+    .then(snapshot => {
+
+        let lista = "Dispositivos disponibles:\n\n"
+
+        snapshot.forEach(doc => {
+            lista += doc.id + "\n"
+        })
+
+        const dispositivo = prompt(lista + "\nIngrese ID")
+
+        if (!dispositivo) return
+
+        db.collection("geocerca")
+        .doc(geocercaId)
+        .update({
+
+            dispositivos: firebase.firestore.FieldValue.arrayUnion(dispositivo)
+
+        })
+
+        alert("Dispositivo vinculado")
+
+    })
+
+}
+
+
 
 
         /* UBICACIONES EN TIEMPO REAL */
@@ -393,13 +463,21 @@
 
                         geocercas.forEach(g => {
 
-                            const poligono = turf.polygon(g.coordinates)
+    if (!g.dispositivos) return
 
-                            if (turf.booleanPointInPolygon(punto, poligono)) {
-                                dentro = true
-                            }
+    if (!g.dispositivos.includes(id)) return
 
-                        })
+    const poligono = turf.polygon(g.coordinates)
+
+    if (turf.booleanPointInPolygon(punto, poligono)) {
+
+        dentro = true
+        geocercaActual = g
+
+    }
+
+})
+
 
                     }
 
@@ -569,6 +647,7 @@ ${data.dispositivo} - ${data.tipo} - ${hora}
                 document.getElementById("historial").innerHTML = html
 
             })
+            
 
     </script>
 
