@@ -465,23 +465,34 @@ ${(data.dispositivos || []).map(d => `
 
             const checks = document.querySelectorAll(".checkDispositivo")
 
+            let promesas = []
+
             checks.forEach(c => {
 
                 if (c.checked) {
 
-                    db.collection("geocerca")
+                    const p = db.collection("geocerca")
                         .doc(geocercaId)
                         .update({
-
                             dispositivos: firebase.firestore.FieldValue.arrayUnion(c.value)
-
                         })
+
+                    promesas.push(p)
                 }
             })
 
-            alert("Vinculados correctamente")
-            actualizarEstadosDispositivos()
+            Promise.all(promesas)
+                .then(() => {
+
+                    alert("Vinculados correctamente")
+
+                    setTimeout(() => {
+                        actualizarEstadosDispositivos()
+                    }, 500)
+
+                })
         }
+
         function desvincularDispositivo(geocercaId, dispositivoId) {
 
             if (!confirm("¿Desvincular dispositivo?")) return
