@@ -122,9 +122,9 @@
         <div id="historial"></div>
     </div>
     <div class="panel">
-    <h3>Geocercas</h3>
-    <div id="geocercasPanel"></div>
-</div>
+        <h3>Geocercas</h3>
+        <div id="geocercasPanel"></div>
+    </div>
 
 
     <audio id="alarma">
@@ -223,33 +223,33 @@
 
         function finalizarGeocerca() {
 
-    const data = draw.getAll()
+            const data = draw.getAll()
 
-    if (data.features.length === 0) {
-        alert("No dibujaste ninguna geocerca")
-        return
-    }
+            if (data.features.length === 0) {
+                alert("No dibujaste ninguna geocerca")
+                return
+            }
 
-    const nombre = prompt("Ingrese nombre de la geocerca")
+            const nombre = prompt("Ingrese nombre de la geocerca")
 
-    if (!nombre) return
+            if (!nombre) return
 
-    const ultimaGeocerca = data.features[data.features.length - 1]
+            const ultimaGeocerca = data.features[data.features.length - 1]
 
-    const poligono = ultimaGeocerca.geometry
+            const poligono = ultimaGeocerca.geometry
 
-    db.collection("geocerca").add({
+            db.collection("geocerca").add({
 
-        coordenadas: JSON.stringify(poligono.coordinates),
-        nombre: nombre
+                coordenadas: JSON.stringify(poligono.coordinates),
+                nombre: nombre
 
-    })
+            })
 
-    draw.deleteAll()
+            draw.deleteAll()
 
-    alert("Geocerca guardada correctamente")
+            alert("Geocerca guardada correctamente")
 
-}
+        }
 
 
 
@@ -308,77 +308,77 @@
 
         let geocercas = []
 
-       db.collection("geocerca")
-.onSnapshot(snapshot => {
+        db.collection("geocerca")
+            .onSnapshot(snapshot => {
 
-    geocercas = []
+                geocercas = []
 
-    draw.deleteAll()
+                draw.deleteAll()
 
-    const featuresLabels = []
+                const featuresLabels = []
 
-    snapshot.forEach(doc => {
+                snapshot.forEach(doc => {
 
-        const data = doc.data()
+                    const data = doc.data()
 
-        const geo = {
-    id: doc.id,
-    type: "Polygon",
-    coordinates: JSON.parse(data.coordenadas),
-    nombre: data.nombre,
-    dispositivos: data.dispositivos || []
-}
+                    const geo = {
+                        id: doc.id,
+                        type: "Polygon",
+                        coordinates: JSON.parse(data.coordenadas),
+                        nombre: data.nombre,
+                        dispositivos: data.dispositivos || []
+                    }
 
-geocercas.push(geo)
+                    geocercas.push(geo)
 
 
-        geocercas.push(geo)
+                    geocercas.push(geo)
 
-        draw.add({
-            id: doc.id,
-            type: "Feature",
-            geometry: geo,
-            properties: {
-                nombre: data.nombre
-            }
-        })
+                    draw.add({
+                        id: doc.id,
+                        type: "Feature",
+                        geometry: geo,
+                        properties: {
+                            nombre: data.nombre
+                        }
+                    })
 
-        const centro = turf.centroid({
-            type: "Feature",
-            geometry: geo
-        })
+                    const centro = turf.centroid({
+                        type: "Feature",
+                        geometry: geo
+                    })
 
-        featuresLabels.push({
-            type: "Feature",
-            geometry: centro.geometry,
-            properties: {
-                nombre: data.nombre
-            }
-        })
+                    featuresLabels.push({
+                        type: "Feature",
+                        geometry: centro.geometry,
+                        properties: {
+                            nombre: data.nombre
+                        }
+                    })
 
-    })
+                })
 
-    if (map.getSource("nombres-geocercas")) {
+                if (map.getSource("nombres-geocercas")) {
 
-        map.getSource("nombres-geocercas").setData({
-            type: "FeatureCollection",
-            features: featuresLabels
-        })
+                    map.getSource("nombres-geocercas").setData({
+                        type: "FeatureCollection",
+                        features: featuresLabels
+                    })
 
-    }
+                }
 
-})
-//esta es otra geocerca
-db.collection("geocerca")
-.onSnapshot(snapshot => {
+            })
+        //esta es otra geocerca
+        db.collection("geocerca")
+            .onSnapshot(snapshot => {
 
-    let html = ""
+                let html = ""
 
-    snapshot.forEach(doc => {
+                snapshot.forEach(doc => {
 
-        const data = doc.data()
+                    const data = doc.data()
 
-        html += `
+                    html += `
         <div class="dispositivo">
 
             <b>Nombre:</b> ${data.nombre}<br>
@@ -392,39 +392,39 @@ db.collection("geocerca")
 
         </div>
         `
-    })
+                })
 
-    document.getElementById("geocercasPanel").innerHTML = html
+                document.getElementById("geocercasPanel").innerHTML = html
 
-})
-function vincularDispositivo(geocercaId) {
+            })
+        function vincularDispositivo(geocercaId) {
 
-    db.collection("ubicaciones").get()
-    .then(snapshot => {
+            db.collection("ubicaciones").get()
+                .then(snapshot => {
 
-        let lista = "Dispositivos disponibles:\n\n"
+                    let lista = "Dispositivos disponibles:\n\n"
 
-        snapshot.forEach(doc => {
-            lista += doc.id + "\n"
-        })
+                    snapshot.forEach(doc => {
+                        lista += doc.id + "\n"
+                    })
 
-        const dispositivo = prompt(lista + "\nIngrese ID")
+                    const dispositivo = prompt(lista + "\nIngrese ID")
 
-        if (!dispositivo) return
+                    if (!dispositivo) return
 
-        db.collection("geocerca")
-        .doc(geocercaId)
-        .update({
+                    db.collection("geocerca")
+                        .doc(geocercaId)
+                        .update({
 
-            dispositivos: firebase.firestore.FieldValue.arrayUnion(dispositivo)
+                            dispositivos: firebase.firestore.FieldValue.arrayUnion(dispositivo)
 
-        })
+                        })
 
-        alert("Dispositivo vinculado")
+                    alert("Dispositivo vinculado")
 
-    })
+                })
 
-}
+        }
 
 
 
@@ -463,20 +463,20 @@ function vincularDispositivo(geocercaId) {
 
                         geocercas.forEach(g => {
 
-    if (!g.dispositivos) return
+                            if (!g.dispositivos) return
 
-    if (!g.dispositivos.includes(id)) return
+                            if (!g.dispositivos.includes(id)) return
 
-    const poligono = turf.polygon(g.coordinates)
+                            const poligono = turf.polygon(g.coordinates)
 
-    if (turf.booleanPointInPolygon(punto, poligono)) {
+                            if (turf.booleanPointInPolygon(punto, poligono)) {
 
-        dentro = true
-        geocercaActual = g
+                                dentro = true
+                                geocercaActual = g
 
-    }
+                            }
 
-})
+                        })
 
 
                     }
@@ -647,7 +647,7 @@ ${data.dispositivo} - ${data.tipo} - ${hora}
                 document.getElementById("historial").innerHTML = html
 
             })
-            
+
 
     </script>
 
