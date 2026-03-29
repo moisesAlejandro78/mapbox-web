@@ -245,7 +245,12 @@
                 nombre: nombre
 
             })
+                .then(() => {
 
+                    actualizarEstadosDispositivos()
+                    repintarMarcadores()
+
+                })
             draw.deleteAll()
 
             alert("Geocerca guardada correctamente")
@@ -400,7 +405,7 @@ ${(data.dispositivos || []).map(d => `
                 }
 
                 actualizarEstadosDispositivos()
-
+                repintarMarcadores()
             })
 
 
@@ -523,6 +528,45 @@ ${(data.dispositivos || []).map(d => `
 
                 if (marcadores[id]) {
                     marcadores[id].setColor(color)
+                }
+
+            })
+
+        }
+        function repintarMarcadores() {
+
+            Object.keys(ubicacionesActuales).forEach(id => {
+
+                const lat = ubicacionesActuales[id].lat
+                const lon = ubicacionesActuales[id].lon
+
+                const punto = turf.point([lon, lat])
+
+                let dentro = false
+
+                geocercas.forEach(g => {
+
+                    if (!g.dispositivos) return
+                    if (!g.dispositivos.includes(id)) return
+
+                    const poligono = turf.polygon(g.coordinates)
+
+                    if (turf.booleanPointInPolygon(punto, poligono)) {
+                        dentro = true
+                    }
+
+                })
+
+                const color = dentro ? "green" : "red"
+
+                if (marcadores[id]) {
+
+                    marcadores[id].remove()
+
+                    marcadores[id] = new mapboxgl.Marker({ color: color })
+                        .setLngLat([lon, lat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
+                        .addTo(map)
                 }
 
             })
