@@ -528,16 +528,22 @@ ${(data.dispositivos || []).map(d => `
 
                 let dentro = dispositivoDentroGeocerca(id, lat, lon)
 
-
                 const color = dentro ? "green" : "red"
 
                 if (marcadores[id]) {
-                    marcadores[id].setColor(color)
+                    marcadores[id].remove()
                 }
 
-            })
+                const marcador = new mapboxgl.Marker({ color: color })
+                    .setLngLat([lon, lat])
+                    .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
+                    .addTo(map)
 
+                marcadores[id] = marcador
+
+            })
         }
+
         function dispositivoDentroGeocerca(id, lat, lon) {
 
             const punto = turf.point([lon, lat])
