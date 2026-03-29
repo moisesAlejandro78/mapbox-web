@@ -248,8 +248,8 @@
                 .then(() => {
 
                     actualizarEstadosDispositivos()
+                    draw.deleteAll()
                 })
-            draw.deleteAll()
 
             alert("Geocerca guardada correctamente")
 
@@ -476,12 +476,11 @@ ${(data.dispositivos || []).map(d => `
                             dispositivos: firebase.firestore.FieldValue.arrayUnion(c.value)
 
                         })
-
                 }
-
             })
 
             alert("Vinculados correctamente")
+            actualizarEstadosDispositivos()
         }
         function desvincularDispositivo(geocercaId, dispositivoId) {
 
