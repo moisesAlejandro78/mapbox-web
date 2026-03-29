@@ -242,18 +242,22 @@
             db.collection("geocerca").add({
 
                 coordenadas: JSON.stringify(poligono.coordinates),
-                nombre: nombre
+                nombre: nombre,
+                dispositivos: []
 
             })
                 .then(() => {
 
-                    actualizarEstadosDispositivos()
                     draw.deleteAll()
+
+                    setTimeout(() => {
+                        actualizarEstadosDispositivos()
+                    }, 500)
+
+                    alert("Geocerca guardada correctamente")
                 })
-
-            alert("Geocerca guardada correctamente")
-
         }
+
 
 
 
@@ -275,6 +279,10 @@
 
                     draw.deleteAll()
                     geocercas = []
+
+                    setTimeout(() => {
+                        actualizarEstadosDispositivos()
+                    }, 300)
 
                     alert("Todas las geocercas eliminadas")
 
