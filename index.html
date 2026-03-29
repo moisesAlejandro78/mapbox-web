@@ -403,6 +403,10 @@ ${(data.dispositivos || []).map(d => `
                 }
 
                 actualizarEstadosDispositivos()
+                setTimeout(() => {
+                    actualizarEstadosDispositivos()
+                }, 300)
+
             })
 
 
