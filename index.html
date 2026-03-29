@@ -124,6 +124,7 @@
     <div class="panel">
         <h3>Geocercas</h3>
         <div id="geocercasPanel"></div>
+        <div id="vinculacionPanel"></div>
     </div>
 
 
@@ -364,11 +365,20 @@
 
             <b>Nombre:</b> ${data.nombre}<br>
             <b>ID:</b> ${doc.id}<br>
-            <b>Dispositivos:</b> ${(data.dispositivos || []).join(", ")}<br>
+            <b>Dispositivos:</b><br>
+${(data.dispositivos || []).map(d => `
+    ${d}
+    <button onclick="desvincularDispositivo('${doc.id}','${d}')">
+        ❌
+    </button><br>
+`).join("")}
 
-            <button onclick="mostrarDispositivos('${doc.id}')">
-                Vincular dispositivos
-            </button>
+<br>
+
+<button onclick="mostrarDispositivos('${doc.id}')">
+    Vincular dispositivos
+</button>
+
 
         </div>
         `
@@ -427,23 +437,24 @@
                     snapshot.forEach(doc => {
 
                         html += `
-            <div>
-                <input type="checkbox" value="${doc.id}" class="checkDispositivo">
-                ${doc.id}
-            </div>
-            `
+                <div>
+                    <input type="checkbox" value="${doc.id}" class="checkDispositivo">
+                    ${doc.id}
+                </div>
+                `
                     })
 
                     html += `
-        <button onclick="guardarVinculos('${geocercaId}')">
-        Vincular seleccionados
-        </button>
-        `
+            <button onclick="guardarVinculos('${geocercaId}')">
+                Vincular seleccionados
+            </button>
+            `
 
-                    document.getElementById("alertas").innerHTML = html
+                    document.getElementById("vinculacionPanel").innerHTML = html
 
                 })
         }
+
         function guardarVinculos(geocercaId) {
 
             const checks = document.querySelectorAll(".checkDispositivo")
@@ -466,6 +477,20 @@
 
             alert("Vinculados correctamente")
         }
+        function desvincularDispositivo(geocercaId, dispositivoId) {
+
+            if (!confirm("¿Desvincular dispositivo?")) return
+
+            db.collection("geocerca")
+                .doc(geocercaId)
+                .update({
+
+                    dispositivos: firebase.firestore.FieldValue.arrayRemove(dispositivoId)
+
+                })
+
+        }
+
         function actualizarEstadosDispositivos() {
 
             Object.keys(ubicacionesActuales).forEach(id => {
