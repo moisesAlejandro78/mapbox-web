@@ -307,6 +307,7 @@
         /* CARGAR GEOCERCA */
 
         let geocercas = []
+        let ubicacionesActuales = {}
 
         db.collection("geocerca")
             .onSnapshot(snapshot => {
@@ -316,6 +317,7 @@
                 draw.deleteAll()
 
                 const featuresLabels = []
+                let html = ""
 
                 snapshot.forEach(doc => {
 
@@ -329,17 +331,20 @@
                         dispositivos: data.dispositivos || []
                     }
 
-
                     geocercas.push(geo)
 
                     draw.add({
                         id: doc.id,
                         type: "Feature",
-                        geometry: geo,
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: JSON.parse(data.coordenadas)
+                        },
                         properties: {
                             nombre: data.nombre
                         }
                     })
+
 
                     const centro = turf.centroid({
                         type: "Feature",
@@ -354,7 +359,22 @@
                         }
                     })
 
+                    html += `
+        <div class="dispositivo">
+
+            <b>Nombre:</b> ${data.nombre}<br>
+            <b>ID:</b> ${doc.id}<br>
+            <b>Dispositivos:</b> ${(data.dispositivos || []).join(", ")}<br>
+
+            <button onclick="mostrarDispositivos('${doc.id}')">
+                Vincular dispositivos
+            </button>
+
+        </div>
+        `
                 })
+
+                document.getElementById("geocercasPanel").innerHTML = html
 
                 if (map.getSource("nombres-geocercas")) {
 
@@ -365,36 +385,11 @@
 
                 }
 
-            })
-        //esta es otra geocerca
-        db.collection("geocerca")
-            .onSnapshot(snapshot => {
-
-                let html = ""
-
-                snapshot.forEach(doc => {
-
-                    const data = doc.data()
-
-                    html += `
-        <div class="dispositivo">
-
-            <b>Nombre:</b> ${data.nombre}<br>
-            <b>ID:</b> ${doc.id}<br>
-<b>Dispositivos:</b> ${(data.dispositivos || []).join(", ")}<br>
-
-
-            <button onclick="vincularDispositivo('${doc.id}')">
-                Vincular dispositivos
-            </button>
-
-        </div>
-        `
-                })
-
-                document.getElementById("geocercasPanel").innerHTML = html
+                actualizarEstadosDispositivos()
 
             })
+
+
         function vincularDispositivo(geocercaId) {
 
             db.collection("ubicaciones").get()
@@ -421,8 +416,90 @@
                     alert("Dispositivo vinculado")
 
                 })
+        }
+        function mostrarDispositivos(geocercaId) {
+
+            db.collection("ubicaciones").get()
+                .then(snapshot => {
+
+                    let html = "<h4>Seleccionar dispositivos</h4>"
+
+                    snapshot.forEach(doc => {
+
+                        html += `
+            <div>
+                <input type="checkbox" value="${doc.id}" class="checkDispositivo">
+                ${doc.id}
+            </div>
+            `
+                    })
+
+                    html += `
+        <button onclick="guardarVinculos('${geocercaId}')">
+        Vincular seleccionados
+        </button>
+        `
+
+                    document.getElementById("alertas").innerHTML = html
+
+                })
+        }
+        function guardarVinculos(geocercaId) {
+
+            const checks = document.querySelectorAll(".checkDispositivo")
+
+            checks.forEach(c => {
+
+                if (c.checked) {
+
+                    db.collection("geocerca")
+                        .doc(geocercaId)
+                        .update({
+
+                            dispositivos: firebase.firestore.FieldValue.arrayUnion(c.value)
+
+                        })
+
+                }
+
+            })
+
+            alert("Vinculados correctamente")
+        }
+        function actualizarEstadosDispositivos() {
+
+            Object.keys(ubicacionesActuales).forEach(id => {
+
+                const lat = ubicacionesActuales[id].lat
+                const lon = ubicacionesActuales[id].lon
+
+                const punto = turf.point([lon, lat])
+
+                let dentro = false
+
+                geocercas.forEach(g => {
+
+                    if (!g.dispositivos) return
+                    if (!g.dispositivos.includes(id)) return
+
+                    const poligono = turf.polygon(g.coordinates)
+
+                    if (turf.booleanPointInPolygon(punto, poligono)) {
+                        dentro = true
+                    }
+
+                })
+
+                const color = dentro ? "green" : "red"
+
+                if (marcadores[id]) {
+                    marcadores[id].setColor(color)
+                }
+
+            })
 
         }
+
 
 
 
@@ -444,16 +521,20 @@
 
                     const lat = data.latitud
                     const lon = data.longitud
+                    ubicacionesActuales[id] = {
+                        lat: lat,
+                        lon: lon
+                    }
 
                     let hora = ""
 
                     if (data.hora && data.hora.toDate) {
 
                         hora = data.hora.toDate().toLocaleTimeString()
-
                     }
 
                     let dentro = false
+                    let geocercaActual = null
 
                     if (geocercas.length > 0) {
 
@@ -471,14 +552,9 @@
 
                                 dentro = true
                                 geocercaActual = g
-
                             }
-
                         })
-
-
                     }
-
 
                     const color = dentro ? "green" : "red"
 
@@ -616,6 +692,8 @@ Ver en mapa
                     "Dispositivos conectados: " + contador
 
                 document.getElementById("dispositivos").innerHTML = html
+                actualizarEstadosDispositivos()
+
 
             })
 
