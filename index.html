@@ -349,8 +349,12 @@
 
                     const centro = turf.centroid({
                         type: "Feature",
-                        geometry: geo
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: geo.coordinates
+                        }
                     })
+
 
                     featuresLabels.push({
                         type: "Feature",
@@ -524,10 +528,6 @@ ${(data.dispositivos || []).map(d => `
             })
 
         }
-
-
-
-
 
         /* UBICACIONES EN TIEMPO REAL */
 
