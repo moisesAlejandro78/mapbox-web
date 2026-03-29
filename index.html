@@ -248,8 +248,6 @@
                 .then(() => {
 
                     actualizarEstadosDispositivos()
-                    repintarMarcadores()
-
                 })
             draw.deleteAll()
 
@@ -405,7 +403,6 @@ ${(data.dispositivos || []).map(d => `
                 }
 
                 actualizarEstadosDispositivos()
-                repintarMarcadores()
             })
 
 
@@ -507,22 +504,8 @@ ${(data.dispositivos || []).map(d => `
                 const lat = ubicacionesActuales[id].lat
                 const lon = ubicacionesActuales[id].lon
 
-                const punto = turf.point([lon, lat])
+                let dentro = dispositivoDentroGeocerca(id, lat, lon)
 
-                let dentro = false
-
-                geocercas.forEach(g => {
-
-                    if (!g.dispositivos) return
-                    if (!g.dispositivos.includes(id)) return
-
-                    const poligono = turf.polygon(g.coordinates)
-
-                    if (turf.booleanPointInPolygon(punto, poligono)) {
-                        dentro = true
-                    }
-
-                })
 
                 const color = dentro ? "green" : "red"
 
@@ -533,47 +516,29 @@ ${(data.dispositivos || []).map(d => `
             })
 
         }
-        function repintarMarcadores() {
+        function dispositivoDentroGeocerca(id, lat, lon) {
 
-            Object.keys(ubicacionesActuales).forEach(id => {
+            const punto = turf.point([lon, lat])
 
-                const lat = ubicacionesActuales[id].lat
-                const lon = ubicacionesActuales[id].lon
+            let dentro = false
 
-                const punto = turf.point([lon, lat])
+            geocercas.forEach(g => {
 
-                let dentro = false
+                if (!g.dispositivos) return
+                if (!g.dispositivos.includes(id)) return
 
-                geocercas.forEach(g => {
+                const poligono = turf.polygon(g.coordinates)
 
-                    if (!g.dispositivos) return
-                    if (!g.dispositivos.includes(id)) return
-
-                    const poligono = turf.polygon(g.coordinates)
-
-                    if (turf.booleanPointInPolygon(punto, poligono)) {
-                        dentro = true
-                    }
-
-                })
-
-                const color = dentro ? "green" : "red"
-
-                if (marcadores[id]) {
-
-                    marcadores[id].remove()
-
-                    marcadores[id] = new mapboxgl.Marker({ color: color })
-                        .setLngLat([lon, lat])
-                        .setPopup(new mapboxgl.Popup().setHTML("<b>" + id + "</b>"))
-                        .addTo(map)
+                if (turf.booleanPointInPolygon(punto, poligono)) {
+                    dentro = true
                 }
-
             })
 
+            return dentro
         }
 
         /* UBICACIONES EN TIEMPO REAL */
+
 
         db.collection("ubicaciones")
             .onSnapshot(snapshot => {
@@ -602,28 +567,8 @@ ${(data.dispositivos || []).map(d => `
                         hora = data.hora.toDate().toLocaleTimeString()
                     }
 
-                    let dentro = false
-                    let geocercaActual = null
+                    let dentro = dispositivoDentroGeocerca(id, lat, lon)
 
-                    if (geocercas.length > 0) {
-
-                        const punto = turf.point([lon, lat])
-
-                        geocercas.forEach(g => {
-
-                            if (!g.dispositivos) return
-
-                            if (!g.dispositivos.includes(id)) return
-
-                            const poligono = turf.polygon(g.coordinates)
-
-                            if (turf.booleanPointInPolygon(punto, poligono)) {
-
-                                dentro = true
-                                geocercaActual = g
-                            }
-                        })
-                    }
 
                     const color = dentro ? "green" : "red"
 
